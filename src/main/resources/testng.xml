@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="MySuite" verbose="1" parallel="false">
+    <parameter name="browser" value="chrome-headless"/>
+    <listeners>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+    <test name="RegressionTests">
+        <classes>
+            <!-- List of test classes -->
+            <class name="com.yourpackage.tests.LoginTest"/>
+            <class name="com.yourpackage.tests.CartTest"/>
+        </classes>
+    </test>
+
+</suite>

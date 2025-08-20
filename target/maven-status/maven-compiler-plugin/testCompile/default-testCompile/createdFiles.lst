@@ -1,0 +1,5 @@
+Utilities\Helper.class
+runners\TestRunner.class
+Tests\UserManagementTest.class
+runners\hooks.class
+Tests\BaseTest.class
