@@ -13,10 +13,10 @@ public class UserManagementTest extends BaseTest {
 
     private WebDriver driver;
     private UserManagementPageLocators userManagementPageLocators;
-    String beforeCount;
-    int beforeDelete;
-    String afterCount;
-    int afterDelete;
+
+    int initialRecordCount;
+    int countAfterAddition;
+    String username= "NewTest2";
 
     @Given("user is on login page")
     public void user_is_on_login_page() {
@@ -45,41 +45,46 @@ public class UserManagementTest extends BaseTest {
 
     @And("user gets the number of records")
     public void user_gets_the_number_of_records() {
-        beforeCount = userManagementPageLocators.getRecordsCount();
-        beforeDelete = userManagementPageLocators.extractCount();
-        System.out.println(beforeCount);
+        initialRecordCount = userManagementPageLocators.extractCount();
+        System.out.println("Initial records: " + initialRecordCount);
     }
 
     @And("user clicks Add button")
     public void user_clicks_Add_button() {
-        //userManagementPageLocators.adminClicksAddUser();
+        userManagementPageLocators.adminClicksAddUser();
     }
 
     @And("user fills the required data")
     public void user_fills_the_required_data() throws InterruptedException {
-//        userManagementPageLocators.selectUserRole();
-//        userManagementPageLocators.selectEmployee("Peter Mac Anderson");
-//        userManagementPageLocators.selectState();
-//        userManagementPageLocators.userEntersNewUsername("NewTest2");
-//        userManagementPageLocators.userEntersNewPassword("Test@123");
-//        userManagementPageLocators.userEntersConfirmPassword("Test@123");
-
+        userManagementPageLocators.selectUserRole("ESS");
+        userManagementPageLocators.userEntersEmployeeName("Timothy Lewis Amiano");
+        userManagementPageLocators.selectState("Enabled");
+        userManagementPageLocators.userEntersNewUsername(username);
+        userManagementPageLocators.userEntersNewPassword("Test@123");
+        userManagementPageLocators.userEntersConfirmPassword("Test@123");
     }
 
     @And("user clicks Save button")
     public void user_clicks_Save_button() {
-        //userManagementPageLocators.saveNewUser();
+        userManagementPageLocators.saveNewUser();
+        userManagementPageLocators.assertOnTheRecordCount();
+
     }
 
     @Then("the number of records should increase by 1")
     public void the_number_of_records_should_increase_by_1() {
+        countAfterAddition = userManagementPageLocators.extractCount();
+        System.out.println("Records after addition: " + countAfterAddition);
+        System.out.println("Expected: " + (initialRecordCount + 1) + ", Actual: " + countAfterAddition);
+
+        Assert.assertEquals(countAfterAddition, initialRecordCount + 1,
+                "Record count did not increase by 1");
 
     }
 
     @When("user searches for the new user")
     public void user_searches_for_the_new_user() {
-
-        userManagementPageLocators.userEntersDataToSearch("User99");
+        userManagementPageLocators.userEntersDataToSearch(username);
         userManagementPageLocators.userClicksSearch();
         userManagementPageLocators.assertOnTheRecordCount();
     }
@@ -90,16 +95,21 @@ public class UserManagementTest extends BaseTest {
         userManagementPageLocators.confirmDeleteUser();
         driver.navigate().refresh();
         userManagementPageLocators.assertOnTheRecordCount();
-        afterCount = userManagementPageLocators.getRecordsCount();
     }
 
     @Then("the number of records should decrease by 1")
     public void the_number_of_records_should_decrease_by_1() {
-        afterDelete = userManagementPageLocators.extractCount();
-        System.out.println(afterCount);
-        Assert.assertEquals(afterDelete, beforeDelete - 1,
+        try { Thread.sleep(2000); } catch (InterruptedException e) {}
+        driver.navigate().refresh();
+
+        int finalCount = userManagementPageLocators.extractCount();
+        System.out.println("Records after deletion: " + finalCount);
+        System.out.println("Expected: " + (countAfterAddition - 1) + ", Actual: " + finalCount);
+
+        Assert.assertEquals(finalCount, countAfterAddition - 1,
                 "Record count did not decrease by 1");
     }
+
 
 
 }

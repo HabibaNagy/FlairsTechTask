@@ -4,7 +4,6 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
@@ -42,20 +41,17 @@ public class UserManagementPageLocators extends BasePage {
     @FindBy(xpath = "(//input[@placeholder='Type for hints...'])[1]")
     WebElement employeeNameField;
 
-    @FindBy(xpath = "(//i[@class='oxd-icon bi-caret-up-fill oxd-select-text--arrow'])[1]")
+    @FindBy(css = "body > div:nth-child(3) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > form:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)")
     WebElement selectState;
 
-    @FindBy(xpath = "(//div[@class='oxd-input-group oxd-input-field-bottom-space'])[4]")
-    WebElement newUsername;
+    @FindBy(css = "div[class='oxd-form-row'] div[class='oxd-grid-2 orangehrm-full-width-grid'] div[class='oxd-grid-item oxd-grid-item--gutters'] div[class='oxd-input-group oxd-input-field-bottom-space'] div input[class='oxd-input oxd-input--active']")
+    WebElement newUsernameField;
     @FindBy(xpath = "(//input[@type='password'])[1]")
     WebElement newPassword;
     @FindBy(xpath = "(//input[@type='password'])[2]")
     WebElement confirmPassword;
-
-    @FindBy(xpath = "//button[normalize-space()='Save']")
+    @FindBy(css = "button[type='submit']")
     WebElement saveBtn;
-
-
     @FindBy(css = "#app > div.oxd-layout.orangehrm-upgrade-layout > div.oxd-layout-container > div.oxd-layout-context > div > div.oxd-table-filter > div.oxd-table-filter-area > form > div.oxd-form-row > div > div:nth-child(1) > div > div:nth-child(2) > input")
     WebElement searchField;
     @FindBy(xpath = "(//button[normalize-space()='Search'])[1]")
@@ -88,36 +84,45 @@ public class UserManagementPageLocators extends BasePage {
         adminTab.click();
     }
 
-    public String getRecordsCount() {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-        WebElement numberOfRecords = wait.until(ExpectedConditions.visibilityOf(recordsCount));
-        String recordCountTxt = numberOfRecords.getText();
-        return recordCountTxt;
-    }
-
     public void adminClicksAddUser() {
         addUser.click();
     }
 
-
-    public void selectUserRole() {
+    public void selectUserRole(String roleName) throws InterruptedException {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
         // 1. Click the dropdown to open it
         WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(userRole));
         dropdown.click();
+
+        // 2. Wait for the options to appear
+        WebElement option = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[contains(@class,'oxd-select-option') and contains(., '" + roleName + "')]")));
+
         Actions actions = new Actions(driver);
 
-        // Press ARROW_DOWN once to go to the first option (Admin in your case)
-        actions.sendKeys(dropdown, Keys.ARROW_DOWN).perform();
-        actions.sendKeys(dropdown, Keys.ARROW_DOWN).perform();
-        actions.sendKeys(dropdown, Keys.ARROW_DOWN).perform();
-        // 2. Wait for the option with text "Admin" to appear and click it
-        WebElement adminOption = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[contains(@class,'oxd-select-text-input') and text()='Admin']"))
-        );
-        adminOption.click();
-        System.out.println("After selection: " + dropdown.getText());
+        // 3. Press ARROW_DOWN to navigate (if needed)
+        actions.sendKeys(Keys.ARROW_DOWN).perform();
+        Thread.sleep(500);
+        actions.sendKeys(Keys.ARROW_DOWN).perform();
+        Thread.sleep(500);
+
+        // 4. Press ENTER to select
+        actions.sendKeys(Keys.ENTER).perform();
+
+        // 5. CRUCIAL: Wait for the dropdown to close and value to update
+        Thread.sleep(2000); // Wait for UI update
+
+        // 6. Verify the selection PROPERLY
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        String currentValue = (String) js.executeScript("return arguments[0].textContent;", dropdown);
+        System.out.println("After selection: " + currentValue);
+
+        // Alternative verification: Check if the value contains the selected role
+        if (currentValue.contains(roleName)) {
+            System.out.println(" Successfully selected: " + roleName);
+        } else {
+            System.out.println(" Selection may have failed. Expected: " + roleName + ", Got: " + currentValue);
+        }
     }
 
 
@@ -127,81 +132,70 @@ public class UserManagementPageLocators extends BasePage {
 
         // 1. Click the dropdown to open it
         WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(employeeNameField));
-        // 2. Use JavaScript to set the value
-        String typeScript = String.format(
-                "var input = arguments[0]; " +
-                        "input.value = '%s'; " +
-                        "input.focus(); " +
-                        "var inputEvent = new InputEvent('input', { bubbles: true }); " +
-                        "var changeEvent = new Event('change', { bubbles: true }); " +
-                        "input.dispatchEvent(inputEvent); " +
-                        "input.dispatchEvent(changeEvent);",
-                employeeName
-        );
-        ((JavascriptExecutor) driver).executeScript(typeScript, dropdown);
+        setText(dropdown, employeeName);
 
-        WebElement employeeOption = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@class='oxd-autocomplete-option' and contains(., '" + employeeName + "')]")
-        ));
-
-        employeeOption.click();
-        System.out.println("After selection: " + dropdown.getText());
-
-
-    }
-
-    public void selectEmployee(String employeeName) {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
-
-        // 1. Find the autocomplete input and type the employee name hint
-        WebElement input = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[contains(@class,'oxd-autocomplete-text-input')]//input")
-        ));
-        input.clear();
-        input.sendKeys(employeeName);
-
-        // 2. Wait for the dropdown options to appear
-        WebElement option = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//div[contains(@class,'oxd-autocomplete-option')]//*[contains(text(), '" + employeeName + "')]")
-        ));
+        WebElement dropdownOptions = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[contains(@class,'oxd-autocomplete-option')]//*[contains(text(), '" + employeeName + "')]")));
+        // Method 1: Using the WebElement directly
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        String script2 = "return document.querySelector('input[placeholder=\"Type for hints...\"]').value;";
+        String empTxt = (String) js.executeScript(script2);
+        System.out.println("Employee field name :" + empTxt);
         Actions actions = new Actions(driver);
-        actions.sendKeys(option, Keys.ARROW_DOWN).perform();
-        actions.sendKeys(option, Keys.ENTER).perform();
-        // 3. Click the option using JS if normal click fails
-        try {
-            option.click();
-        } catch (Exception e) {
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            js.executeScript("arguments[0].click();", option);
+        while (!(empTxt.equalsIgnoreCase(employeeName))) {
+            actions.sendKeys(dropdownOptions, Keys.ARROW_DOWN).perform();
+            Thread.sleep(4000);
+            empTxt = (String) js.executeScript(script2);
         }
+        actions.sendKeys(dropdownOptions, Keys.ENTER).perform();
+        Thread.sleep(2000);
+        //  System.out.println("After selection: " + dropdownOptions.getText());
 
-        // Debug print
-        System.out.println("Selected employee: " + employeeName);
+
     }
 
-    public void selectState() {
+
+    public void selectState(String state) throws InterruptedException {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
         // 1. Click the dropdown to open it
-        WebElement dropdownState = wait.until(ExpectedConditions.elementToBeClickable(selectState));
-        dropdownState.click();
+        WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(selectState));
+        dropdown.click();
+
+        // 2. Wait for the options to appear
+        WebElement option = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[contains(@class,'oxd-select-option') and contains(., '" + state + "')]")));
+
         Actions actions = new Actions(driver);
 
-        // Press ARROW_DOWN once to go to the first option (Admin in your case)
-        actions.sendKeys(dropdownState, Keys.ARROW_DOWN).perform();
-        actions.sendKeys(dropdownState, Keys.ARROW_DOWN).perform();
-        actions.sendKeys(dropdownState, Keys.ARROW_DOWN).perform();
-        actions.sendKeys(dropdownState, Keys.ENTER).perform();
-        actions.sendKeys(dropdownState, Keys.ENTER).perform();
-        System.out.println("After selection: " + dropdownState.getText());
+        // 3. Press ARROW_DOWN to navigate (if needed)
+        actions.sendKeys(Keys.ARROW_DOWN).perform();
+        Thread.sleep(500);
+
+        // 4. Press ENTER to select
+        actions.sendKeys(Keys.ENTER).perform();
+
+        // 5. CRUCIAL: Wait for the dropdown to close and value to update
+        Thread.sleep(500); // Wait for UI update
+
+        // 6. Verify the selection PROPERLY
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        String currentValue = (String) js.executeScript("return arguments[0].textContent;", dropdown);
+        System.out.println("After selection: " + currentValue);
+
+        // Alternative verification: Check if the value contains the selected role
+        if (currentValue.contains(state)) {
+            System.out.println("✓ Successfully selected: " + state);
+        } else {
+            System.out.println("✗ Selection may have failed. Expected: " + state + ", Got: " + currentValue);
+        }
+    }
+
+
+    public void userEntersNewUsername(String newUsernameTxt) {
+        setText(newUsernameField, newUsernameTxt);
     }
 
     public void userEntersNewPassword(String newPasswordTxt) {
         setText(newPassword, newPasswordTxt);
-    }
-
-    public void userEntersNewUsername(String newUsernameTxt) {
-        setText(newUsername, newUsernameTxt);
     }
 
     public void userEntersConfirmPassword(String confirmPasswordTxt) {
@@ -210,6 +204,19 @@ public class UserManagementPageLocators extends BasePage {
 
     public void saveNewUser() {
         saveBtn.click();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        // Wait for the success toast message to appear
+        WebElement successToast = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".oxd-toast.oxd-toast--success.oxd-toast-container--toast")));
+        // Get the success message text
+        String successMessage = successToast.getText();
+        System.out.println("Success: " + successMessage);
+
+        try {
+            wait.until(ExpectedConditions.invisibilityOfElementLocated(By.cssSelector(".oxd-toast.oxd-toast--success.oxd-toast-container--toast")));
+        } catch (Exception e) {
+
+        }
     }
 
     public void userEntersDataToSearch(String username) {
@@ -254,6 +261,5 @@ public class UserManagementPageLocators extends BasePage {
     public void assertOnTheRecordCount() {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         wait.until(ExpectedConditions.visibilityOf(recordsCount));
-
     }
 }

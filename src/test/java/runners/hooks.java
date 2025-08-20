@@ -7,6 +7,7 @@ import io.cucumber.java.Before;
 
 public class hooks extends BaseTest {
 
+
     @Before
     public void setUp() {
         initializeDriver();
